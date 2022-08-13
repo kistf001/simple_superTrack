@@ -1,6 +1,7 @@
 
 # Supertrack for PyTorch and MUJOCO
 This repository is an implementation of Supertrack.
+
 <img src="Animation/test.gif" alt="test"/>
 
 ## What is supertrack?
