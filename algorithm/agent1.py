@@ -102,9 +102,8 @@ class Agent(object):
 
         Crit, Act = self.supertrack_agent.update()
 
-        print(Crit, end="||- " )
-        print(Act , end="||- " )
-        print( np.array(list_current_ep_steps).mean(), end="||$ \n" )
+        print( Crit, "||- ", Act , end=" ||- " )
+        print( np.array(list_current_ep_steps).mean(), end=" ||$ \n" )
 
 
     # weight management
