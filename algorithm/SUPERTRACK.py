@@ -98,8 +98,6 @@ class SUPERTRACK:
 
     def update(self):
         
-        a = []
-        
         agent_buffer = self.buffer
 
         _pd            = torch.stack(agent_buffer.pd).type(torch.float32)
@@ -129,9 +127,6 @@ class SUPERTRACK:
         loss = self.loss_critic(state_physics,state_model)
         loss.backward(retain_graph=True)
         self.optimizer_critic.step()
-        """ Gradient averaging. """
-        for param in self.policy.critic.parameters():
-            a.append(param.grad.data)
         
         ##############################################################
         # Actor
@@ -154,11 +149,8 @@ class SUPERTRACK:
         d = self.loss_actor(motion,state_model)
         d.backward(retain_graph=True)
         self.optimizer_actor.step()
-        """ Gradient averaging. """
-        for param in self.policy.actor.parameters():
-            a.append(param.grad.data)
         
-        return a, round(loss.detach().item(),5), round(d.detach().item(),5)
+        return round(loss.detach().item(),5), round(d.detach().item(),5)
 
 if __name__=="__main__":
     SUPERTRACK()

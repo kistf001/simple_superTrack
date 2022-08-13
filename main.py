@@ -1,27 +1,11 @@
-import multiprocessing as mp
-import m_client, m_server
-import setup
+from algorithm import agent1 as agent
+agent.torch.set_num_threads(8)
 
-if __name__ == "__main__":
+A = agent.Agent()
 
-    process_number = 1
+for dd in range(0,100000):
 
-    if(process_number):
-
-        mutex0 = [ mp.Lock() for d in range(process_number) ]
-        mutex1 = [ mp.Lock() for d in range(process_number) ]
-
-        process = [ mp.Process(
-            target=m_client.process,
-            args=(
-                number,
-                mutex0[number],
-                mutex1[number],
-                int(4096/process_number),
-            )
-        ) for number in range(process_number) ]
-
-        [ p.start() for p in process ]
-
-    m_server.process(process_number,mutex0,mutex1)
-        
+    A.run_data()
+    
+    if(dd %5)==0:
+        A.param_export()

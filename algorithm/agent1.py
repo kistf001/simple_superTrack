@@ -48,44 +48,6 @@ class Agent(object):
         )
 
         self.learning_counter = 0
-    
-    def run_learning(self, child_weight):
-
-        # Distributed Radam
-
-        print("run_learning")
-
-        master_weight = child_weight[0]
-
-        master_weight_length = len(master_weight)
-        child_weight_length = len(child_weight)
-
-        for _child_weight in child_weight[1:]:
-            for w in range(master_weight_length):
-                master_weight[w] = np.array(master_weight[w] + _child_weight[w])
-
-        for _master_weight in master_weight:
-            _master_weight = np.array(_master_weight/child_weight_length)
-
-        data_count = 0
-
-        """ Gradient averaging. """
-        for param in self.supertrack_agent.policy.critic.parameters():
-            param.grad = torch.from_numpy(master_weight[data_count]).type(torch.float32)
-            data_count += 1
-        #self.supertrack_agent.optimizer_critic.step()
-
-        """ Gradient averaging. """
-        for param in self.supertrack_agent.policy.actor.parameters():
-            param.grad = torch.from_numpy(master_weight[data_count]).type(torch.float32)
-            data_count += 1
-        #self.supertrack_agent.optimizer_actor.step()
-
-        ## if continuous action space; then decay action std of ouput action distribution
-        #if self.has_continuous_action_space and (not self.learning_counter % self.action_std_decay_freq):
-        #    self.ppo_agent.decay_action_std(self.action_std_decay_rate, self.min_action_std)
-
-        return
 
     def run_data(self):
 
@@ -138,13 +100,12 @@ class Agent(object):
 
             list_current_ep_steps.append(current_ep_steps)
 
-        grad_data, Crit, Act = self.supertrack_agent.update()
+        Crit, Act = self.supertrack_agent.update()
 
         print(Crit, end="||- " )
         print(Act , end="||- " )
-        print( np.array(list_current_ep_steps).mean(), end="||$ " )
+        print( np.array(list_current_ep_steps).mean(), end="||$ \n" )
 
-        return grad_data
 
     # weight management
 
@@ -170,14 +131,3 @@ class Agent(object):
     def param_import(self):
         policy = np.load("./trained_weight/policy.npy",allow_pickle=True)
         self.param_set(policy)
-
-
-if __name__ == '__main__':
-
-    import copy
-    import time
-    A = Agent()
-    s = A.run_data()
-    for _ in s:
-        print(_.shape)
-    #A.run_learning(s)
