@@ -8,16 +8,7 @@
         <geom condim="1" material="matgeom"/>
     </default>
 
-    <option 
-        timestep="0.01" 
-        iterations="50" 
-        tolerance="1e-10" 
-        solver="Newton" 
-        jacobian="dense" 
-        cone="pyramidal"
-    />
-
-    <size nconmax="50" njmax="200" nstack="10000"/>
+    <option timestep="0.02" />
 
     <visual>
         <map force="0.1" zfar="30"/>
@@ -41,27 +32,16 @@
         
         <!--      -->
         <camera name="fixed" pos="4 -4 5" euler="35 45 45"/>
-        <!--      -->
         <geom name="floor" pos="0 0 0" size="0 0 .25" type="plane" material="matplane" condim="3"/>
-        <!--      -->
         <light directional="false" diffuse=".2 .2 .2" 
             specular="0 0 0" pos="0 0 5" dir="0 0 -1" castshadow="false"/>
         <light directional="false" diffuse=".8 .8 .8" mode="targetbodycom" target="torso" 
             specular="0.3 0.3 0.3" pos="0 0 4.0" dir="0 0 -1"/>
+
         <!--      -->
         <body name="torso" pos="0 0 0.04" euler="0.0 0.0 0.0" >
-            <site name="root" pos="0 0 0" size=".01" zaxis="0 0 0.01"/>
             <body name="bong0" pos="0 0 0" >
-                <site name="bong0_0" pos=" 0.10  0.20 0" size=".05" zaxis="0 0 0.01"/>
-                <geom name="bong0_0" pos=" 0.10  0.20 0" type="sphere" size="0.04" />
-                <site name="bong0_1" pos="-0.10 -0.12 0" size=".05" zaxis="0 0 0.01"/>
-                <geom name="bong0_1" pos="-0.10 -0.12 0" type="sphere"  size="0.04" />
-                <site name="bong0_2" pos=" 0.10 -0.12 0" size=".05" zaxis="0 0 0.01"/>
-                <geom name="bong0_2" pos=" 0.10 -0.12 0" type="sphere" size="0.04" />
-                <site name="bong0_3" pos="-0.10  0.20 0" size=".05" zaxis="0 0 0.01"/>
-                <geom name="bong0_3" pos="-0.10  0.20 0" type="sphere" size="0.04" />
                 <body name="bong1" pos="0 0 0.05" >
-                    <site name="sssss" pos="0 0 0" size=".01" zaxis="0 0 0.01"/>
                     <geom name="bong1" type="capsule" fromto="0 0 0 0 0 0.9" size="0.05" />
                     <joint name="bong1_x" type="hinge" pos="0 0 0" axis="1 0 0" range="-20 20" damping="1" stiffness="5" armature="0.02" />
                     <joint name="bong1_y" type="hinge" pos="0 0 0" axis="0 1 0" range="-20 20" damping="1" stiffness="5" armature="0.02" />
@@ -75,16 +55,10 @@
 
     </worldbody>
 
-    <!--  -->
     <actuator>
-        <motor name="bong1_x" gear="50" joint="bong1_x" />
-        <motor name="bong1_y" gear="50" joint="bong1_y" />
+       <position ctrllimited="true" kp="130" ctrlrange="-0.2 0.2" joint="bong1_x" name="bong1_x"/>
+       <position ctrllimited="true" kp="130" ctrlrange="-0.2 0.2" joint="bong1_y" name="bong1_y"/>
+ 
     </actuator>
-
-    <sensor>
-        <!--    -->
-        <jointvel  name="jointvel_x" joint="bong1_x"/>
-        <jointvel  name="jointvel_y" joint="bong1_y"/>
-    </sensor>
 
 </mujoco>
