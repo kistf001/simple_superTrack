@@ -1,27 +1,7 @@
 from algorithm import gether, train_policy, train_world
 
-env = None
-model = None
-loss1 = None
-loss2 = None
-optim_w = None
-optim_p = None
-buffer = None
-
-def init(_model, _loss1, _loss2, _optim_w, _optim_p, _env, _buffer):
-    """
-    input : model, loss, optim_w, optim_p, env, buffer, step_size
-    """
-    global model, loss1, loss2, optim_w, optim_p, env, buffer
-    model            = _model
-    loss1, loss2     = _loss1, _loss2
-    optim_w, optim_p = _optim_w, _optim_p
-    env              = _env
-    buffer           = _buffer
-
-def start():
-    global model, loss1, loss2, optim_w, optim_p, env, buffer
-
+def start(model_master, model_slave, loss1, loss2, optim_w, optim_p, buffer, env):
+    
     # from torch.utils.tensorboard import SummaryWriter
     # writer = SummaryWriter()
 
@@ -31,12 +11,24 @@ def start():
         ###################################################
         # process
         ###################################################
-        # first. S, T, K get funktion
-        gether(0, model, env, buffer)
+        # first : S, T, K get function
+        gether(0, model_slave, buffer, env)
 
-        # second. learing algorithm
-        result_w = train_world (model, env, buffer, loss1, loss2, optim_w)
-        result_p = train_policy(model, env, buffer, loss1, loss2, optim_p)
+        # second : learing algorithm
+        # for key in buffer.refrash(8): # for mini-batch loop
+        #     result_w = train_world (model, buffer, loss1, loss2, optim_w)
+        # for key in buffer.refrash(32): # for mini-batch loop
+        #     result_p = train_policy(model, buffer, loss1, loss2, optim_p)
+
+        buffer.refrash_all(8) # for mini-batch loop
+        result_w = train_world (model_master, buffer, loss1, loss2, optim_w)
+        buffer.refrash_all(32) # for mini-batch loop
+        result_p = train_policy(model_master, buffer, loss1, loss2, optim_p)
+
+        model_slave.actor .load_state_dict(model_master.actor.state_dict())
+        model_slave.critic.load_state_dict(model_master.critic.state_dict())
+
+        print("end")
 
         ###################################################
         # logging
@@ -47,10 +39,13 @@ def start():
             counter
             )
 
-        # writer.add_scalar(result_w[0], result_w[1], counter)
-        # writer.add_scalar(result_p[0], result_p[1], counter)
+        # # writer.add_scalar(result_w[0], result_w[1], counter)
+        # # writer.add_scalar(result_p[0], result_p[1], counter)
 
-        counter += 1
+        # counter += 1
 
-        # if (counter%100)==0:
-        #     model.save("./train_weight")
+        # # process
+        # env.noise_step()
+
+        # # if (counter%100)==0:
+        # #     model.save("./train_weight")

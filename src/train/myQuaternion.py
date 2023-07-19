@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 @torch.jit.script
-def quat_abs(x):
+def quat_norm(x):
     """
     quaternion norm (unit quaternion represents a 3D rotation, which has norm of 1)
     """
@@ -13,7 +13,7 @@ def quat_unit(x):
     """
     normalized quaternion with norm of 1
     """
-    norm = quat_abs(x).unsqueeze(-1)
+    norm = quat_norm(x).unsqueeze(-1)
     return x / (norm.clamp(min=1e-9))
 @torch.jit.script
 def quat_mul(Q0, Q1):
@@ -39,9 +39,11 @@ def quat_exp(v):
     halfangle = v.norm(p=2, dim=-1).unsqueeze(-1)
     c = torch.cos(halfangle)
     s = torch.sin(halfangle) / halfangle
+    ones = halfangle.clone() * 0 + 1
     return torch.where(
         halfangle < 0.0000001,
-        torch.concat((torch.ones(halfangle.shape), v), -1),
+        # torch.concat((torch.ones(halfangle.shape), v), -1),
+        torch.concat((ones, v), -1),
         torch.concat((c, s*v), -1), # if small than eps
         )
 @torch.jit.script

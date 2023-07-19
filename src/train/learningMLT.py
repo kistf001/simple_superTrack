@@ -1,54 +1,22 @@
 from algorithm import gether, train_policy, train_world
+import torch
 import torch.multiprocessing as mp
 import time
-import torch
 
-model_master, model_slave = None, None
-loss1       , loss2       = None, None
-optim_w     , optim_p     = None, None
-buffer                    = None
-env                       = None
+def start(model_master, model_slave, loss1, loss2, optim_w, optim_p, _buffer, _env):
 
-def init(
-    _model_master, _model_slave, 
-    _loss1, _loss2, _optim_w, _optim_p, _env, _buffer):
-    """
-    input : model, loss, optim_w, optim_p, env, buffer, step_size
-    """
-    global model_master, model_slave
-    global loss1, loss2
-    global optim_w, optim_p
-    global buffer
-    global env
-
-    model_master, model_slave = _model_master, _model_slave
-    loss1       , loss2       = _loss1, _loss2
-    optim_w     , optim_p     = _optim_w, _optim_p
-    buffer                    = _buffer
-    env                       = _env
-
-def start():
-    global model_master, model_slave
-    global loss1, loss2
-    global optim_w, optim_p
-    global buffer
-    global env
-
-    counter = 0
-
-    muchine_num = buffer.buffer_size_processor
-
+    muchine_num = _buffer.buffer_size_processor
     start_flag = torch.zeros((muchine_num)).share_memory_()
 
     ##########################################################
     # data gethering
     ##########################################################
+    mp.set_start_method('spawn')
+
     for i in range(muchine_num):
         p = mp.Process(
             target = loop_slave_process, 
-            args = (
-                i, model_slave, env, buffer, start_flag
-                ))
+            args = (i, model_slave, _buffer._export(), start_flag))
         p.start()
 
     ##########################################################
@@ -56,40 +24,85 @@ def start():
     ##########################################################
     from torch.utils.tensorboard import SummaryWriter
     writer = SummaryWriter()
+
+    counter = 0
+
     while True:
-        #
-        counter += 1
-        # 
+
+        # multiprocess flow control
         while(start_flag.sum()!=muchine_num):
             time.sleep(0.05)
-        # process
-        result_w = train_world(model_master, env, buffer, loss1, loss2, optim_w)
-        result_p = train_policy(model_master, env, buffer, loss1, loss2, optim_p)
+        
+        # variable
+        result_w, result_p = ["train_world", 0], ["train_policy", 0]
+
+        # For mini-batch
+            # for key in buffer.refrash(8): # for mini-batch loop
+            #     result_w = train_world (model_master, env, buffer, loss1, loss2, optim_w)
+            # for key in buffer.refrash(32): # for mini-batch loop
+            #     result_p = train_policy(model_master, env, buffer, loss1, loss2, optim_p)
+        # For batch
+        _buffer.refrash_all(8)
+        result_w = train_world(model_master, _buffer, loss1, loss2, optim_w)
+        _buffer.refrash_all(32)
+        result_p = train_policy(model_master, _buffer, loss1, loss2, optim_p)
+
+        #
         model_slave.actor .load_state_dict(model_master.actor.state_dict())
         model_slave.critic.load_state_dict(model_master.critic.state_dict())
+
+        #
+        _buffer.noise_step()
+
+        #
+        start_flag *= 0
+
+        ##########################################################################
+        #
+        ##########################################################################
+
         writer.add_scalar(result_w[0], result_w[1], counter)
         writer.add_scalar(result_p[0], result_p[1], counter)
-        start_flag *= 0; #time.sleep(2)
-        print(result_w, result_p, counter)
-        if(counter%25) == 0:
-            # logging
+
+        print(result_w, result_p, counter, _buffer.get_noise_gain())
+
+        counter += 1
+
+        if (counter % 25) == 0:
             model_master.save("./train_weight")
 
-def loop_slave_process(rank, model_slave, env, buffer, start_flag):
+def loop_slave_process(rank, model_slave, buffer_data, start_flag):
+
+    import buffer, env
+    
+    ##########################################################################
+    # Buffer setting
+    ##########################################################################
+    buffer._import(buffer_data)
+    while buffer.S_buffer == None:
+        time.sleep(1)
+    
+    ##########################################################################
+    # Seed setting
+    ##########################################################################
     # important in multi processing agent
+    time.sleep(float(torch.rand([1])))
     torch.manual_seed(torch.rand(1) * (rank * 1000000000) * time.time())
-    #
-    gether(rank, model_slave, env, buffer)
-    gether(rank, model_slave, env, buffer)
-    gether(rank, model_slave, env, buffer)
-    gether(rank, model_slave, env, buffer)
-    gether(rank, model_slave, env, buffer)
-    gether(rank, model_slave, env, buffer)
-    gether(rank, model_slave, env, buffer)
-    gether(rank, model_slave, env, buffer)
-    #
+    
+    ##########################################################################
+    # DATA FILLING
+    ##########################################################################
+    gether(rank, model_slave, buffer, env)
+    gether(rank, model_slave, buffer, env)
+    gether(rank, model_slave, buffer, env)
+    gether(rank, model_slave, buffer, env)
+    gether(rank, model_slave, buffer, env)
+    gether(rank, model_slave, buffer, env)
+    gether(rank, model_slave, buffer, env)
+    gether(rank, model_slave, buffer, env)
+
     while True:
-        while(start_flag[rank]!=0):
+        while start_flag[rank] != 0:
             time.sleep(0.05)
-        gether(rank, model_slave, env, buffer)
+        gether(rank, model_slave, buffer, env)
         start_flag[rank] += 1
