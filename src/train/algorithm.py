@@ -35,7 +35,7 @@ def local(P0, P1, P2, P3):
 
     hei = P0[..., 0:1, 2:3]
 
-    up = torch.zeros(P0[..., 0:1, :].shape)
+    up = P0[..., 0:1, :].clone().detach() * 0.0
     up[..., 2:3] += 1
     up = up.unsqueeze(-1)
     up = torch.einsum("...ij,...jk->...ik",root_mat_inv, up).squeeze(-1)
@@ -90,13 +90,13 @@ def integrate(P_pos, P_vel, P_rot, P_ang, vel_of_dt, ang_of_dt, dt):
 ######################################################################
 #
 ######################################################################
-ADD_NOISE = 0.05
-SCALE = 10
+def gether(rank, model, buffer, env):
 
-######################################################################
-#
-######################################################################
-def gether(rank, model, env, buffer):
+    ADD_NOISE = buffer.get_noise_gain()
+    SCALE = buffer.get_action_gain()
+
+    START, END_SIZE = 0, buffer.get_allocated_size()
+
     #############################################################
     # setting
     #############################################################
@@ -104,63 +104,64 @@ def gether(rank, model, env, buffer):
     #############################################################
         # Simulator Initialize
         _S, _K, _T = env.init(), env.init(), torch.zeros(21)
-        #
-        start = 0
-        end = buffer.get_allocated_size()
-        #
+        # Generate Normaldistributed Noise
+        noise = torch.normal(0.0, 1.0, (END_SIZE, 21)) * ADD_NOISE
+        # RESET load data
         buffer.start(rank)
-        #
-        while start != end:
-            # Fail detaect
-            if (start % 64) == 0 :
-                _S = env.reset()
-            # if (start % 32) == 0 :
-            #     if(env.is_fail()):
-            #         _S = env.reset()
+        # START LOOP
+        while START != END_SIZE:
+            # Reset if the head position is lower than the standard.
+            if (START % 8) == 0:
+                if(env.is_fail()):
+                    _S = env.reset()
             # Converting to Local
             _T = model.policy(to_serial(*local(*_S)))
-            _T = (torch.normal(0.0, 1.0, _T.shape) * ADD_NOISE) + (_T) 
-            _T *= SCALE
-            # Stacking to Circular Buffer
+            # Add noise
+            _T = (_T + noise[START]) * SCALE
+            # Stack to Circular Buffer
             buffer.insert(_S, _K, _T)
             # Simulator next step
             _S = env.step(_T)
             # count
-            start += 1
+            START += 1
         # End Step Size
         buffer.next()
     ######################################################################
     return
-######################################################################
 
 ######################################################################
 #
 ######################################################################
-def train_world (model, env, __buffer, L1, L2, optim_world):
+def train_world (model, __buffer, L1, L2, optim_world):
 
     __S, __K, __T = __buffer.get()
+    device = __buffer.get_device_type()
 
-    # init
     S = (
-        __S[POS].detach().clone().reshape(-1,8,16,3).transpose(1, 0), 
-        __S[VEL].detach().clone().reshape(-1,8,16,3).transpose(1, 0), 
-        __S[ROT].detach().clone().reshape(-1,8,16,4).transpose(1, 0), 
-        __S[ANG].detach().clone().reshape(-1,8,16,3).transpose(1, 0),
+        __S[POS].clone().detach().transpose(1, 0).to(device), 
+        __S[VEL].clone().detach().transpose(1, 0).to(device), 
+        __S[ROT].clone().detach().transpose(1, 0).to(device), 
+        __S[ANG].clone().detach().transpose(1, 0).to(device),
         )
-    T = __T.detach().clone().reshape(-1,8,21).transpose(1, 0)
+    T = __T.clone().detach().transpose(1, 0).to(device)
     P = (
-        S[POS].detach().clone(), 
-        S[VEL].detach().clone(), 
-        S[ROT].detach().clone(), 
-        S[ANG].detach().clone(),
+        S[POS].clone().detach(), 
+        S[VEL].clone().detach(), 
+        S[ROT].clone().detach(), 
+        S[ANG].clone().detach(),
         )
     P_i = (
-        P[POS][0:1,...].detach().clone(), 
-        P[VEL][0:1,...].detach().clone(), 
-        P[ROT][0:1,...].detach().clone(), 
-        P[ANG][0:1,...].detach().clone(),
+        P[POS][0:1,...].clone().detach(), 
+        P[VEL][0:1,...].clone().detach(), 
+        P[ROT][0:1,...].clone().detach(), 
+        P[ANG][0:1,...].clone().detach(),
         )
 
+    delta_time = torch.tensor([0.01]).to(device)
+    angular_velocity_time = torch.tensor([1]).to(device)
+
+    optim_world.zero_grad()
+    
     # Predict P over a window of 𝑁 frames
     for i in range(8):
 
@@ -171,15 +172,13 @@ def train_world (model, env, __buffer, L1, L2, optim_world):
 
         # Convert accelerations to world space
         root_mat = myQuaternion.q_2_m(P_i[ROT][..., 0:1, :]) # 1, -1, 1, 4
-        world_vel_dt = torch.einsum(
-            "...ij,...jk->...ik", 
+        world_vel_dt = torch.einsum("...ij,...jk->...ik", 
             root_mat, local_vel_dt.unsqueeze(-1)).squeeze(-1)
-        world_ang_dt = torch.einsum(
-            "...ij,...jk->...ik", 
+        world_ang_dt = torch.einsum("...ij,...jk->...ik", 
             root_mat, local_ang_dt.unsqueeze(-1)).squeeze(-1)
 
         # Integrate rigid body accelerations
-        P_i = integrate(*P_i, world_vel_dt, world_ang_dt, torch.tensor([0.01]))
+        P_i = integrate(*P_i, world_vel_dt, world_ang_dt, delta_time)
 
         # P_i integrate to P
         P[POS][i:i+1] = P_i[POS].clone()
@@ -191,47 +190,51 @@ def train_world (model, env, __buffer, L1, L2, optim_world):
     loss_pos = L1(P[POS], S[POS])
     loss_vel = L1(P[VEL], S[VEL])
     loss_rot = myQuaternion.quat_differentiate_angular_velocity(
-            P[ROT], S[ROT], torch.tensor([1]) ).abs().mean()
+        P[ROT], S[ROT], angular_velocity_time ).abs().mean()
     loss_ang = L1(P[ANG], S[ANG])
 
     # Update network parameters
-    optim_world.zero_grad()
     loss_sum = loss_pos + loss_vel + loss_rot + loss_ang
     loss_sum.backward()
     optim_world.step()
 
-    return "train_world ", float(loss_sum.detach().numpy())
-def train_policy(model, env, __buffer, L1, L2, optim_policy):
-    
+    return "train_world ", float(loss_sum.detach().cpu().numpy())
+def train_policy(model, __buffer, L1, L2, optim_policy):
+
     __S, __K, __T = __buffer.get()
+    device = __buffer.get_device_type()
 
     # init
-    S = (
-        __S[POS].detach().clone().reshape(-1,32,16,3).transpose(1, 0), 
-        __S[VEL].detach().clone().reshape(-1,32,16,3).transpose(1, 0), 
-        __S[ROT].detach().clone().reshape(-1,32,16,4).transpose(1, 0), 
-        __S[ANG].detach().clone().reshape(-1,32,16,3).transpose(1, 0),
-        )
     K = (
-        __K[POS].detach().clone().reshape(-1,32,16,3).transpose(1, 0), 
-        __K[VEL].detach().clone().reshape(-1,32,16,3).transpose(1, 0), 
-        __K[ROT].detach().clone().reshape(-1,32,16,4).transpose(1, 0), 
-        __K[ANG].detach().clone().reshape(-1,32,16,3).transpose(1, 0),
+        __K[POS].clone().detach().transpose(1, 0).to(device), 
+        __K[VEL].clone().detach().transpose(1, 0).to(device), 
+        __K[ROT].clone().detach().transpose(1, 0).to(device), 
+        __K[ANG].clone().detach().transpose(1, 0).to(device),
         )
     P = (
-        S[POS].detach().clone(), 
-        S[VEL].detach().clone(), 
-        S[ROT].detach().clone(), 
-        S[ANG].detach().clone(),
+        __S[POS].clone().detach().transpose(1, 0).to(device), 
+        __S[VEL].clone().detach().transpose(1, 0).to(device), 
+        __S[ROT].clone().detach().transpose(1, 0).to(device), 
+        __S[ANG].clone().detach().transpose(1, 0).to(device),
         )
     P_i = (
-        P[POS][0:1,...].detach().clone(), 
-        P[VEL][0:1,...].detach().clone(), 
-        P[ROT][0:1,...].detach().clone(), 
-        P[ANG][0:1,...].detach().clone(),
+        P[POS][0:1,...].clone().detach(), 
+        P[VEL][0:1,...].clone().detach(), 
+        P[ROT][0:1,...].clone().detach(), 
+        P[ANG][0:1,...].clone().detach(),
         )
-    TT = __T.detach().clone().reshape(-1,32,21).transpose(1, 0)
-    
+    TT = __T.detach().clone().transpose(1, 0).to(device)
+
+    Noise  = torch.normal(0.0, 1.0, TT.shape)
+    Noise *= __buffer.get_noise_gain().clone()  # MULTIPLY NOISE GAIN 0.1
+    Noise  = Noise.to(device)
+
+    SCALE = __buffer.get_action_gain().clone().to(device)  # CONTROL SCALE
+
+    delta_time = torch.tensor([0.01]).to(device)
+
+    optim_policy.zero_grad()
+
     # Predict P over a window of 𝑁 frames
     for i in range(32):
 
@@ -240,10 +243,10 @@ def train_policy(model, env, __buffer, L1, L2, optim_policy):
         TT[i:i+1] = OUT.clone()
 
         # Add noise to offset
-        OUT_hat = (torch.normal(0.0, 1.0, OUT.shape) * ADD_NOISE) + (OUT)
+        OUT_hat = Noise[i] + OUT
 
-        # Compute PD target is skiped 
-        """ In mujoco ALL joint have one Parameter  """
+        # Compute PD target
+        """ Papers and implementations are different. """
         OUT_hat *= SCALE
 
         # Pass through world mod
@@ -261,7 +264,7 @@ def train_policy(model, env, __buffer, L1, L2, optim_policy):
             root_mat, local_ang_dt.unsqueeze(-1)).squeeze(-1)
 
         # Integrate rigid body accelerations
-        P_i = integrate(*P_i, world_vel_dt, world_ang_dt, torch.tensor([0.01]))
+        P_i = integrate(*P_i, world_vel_dt, world_ang_dt, delta_time)
 
         # P_i integrate to P
         P[POS][i:i+1] = P_i[POS].clone()
@@ -270,8 +273,7 @@ def train_policy(model, env, __buffer, L1, L2, optim_policy):
         P[ANG][i:i+1] = P_i[ANG].clone()
 
     # Compute Local Spaces
-    P_loss = local(*P)
-    K_loss = local(*K)
+    P_loss, K_loss = local(*P), local(*K)
 
     # Compute losses
     loss_pos = L1(P_loss[0], K_loss[0])
@@ -284,19 +286,12 @@ def train_policy(model, env, __buffer, L1, L2, optim_policy):
     loss_sreg = TT.abs().mean()
     
     # Update network parameters
-    optim_policy.zero_grad()
     loss_sum = (
-        loss_pos + loss_vel + 
-        loss_rot + loss_ang + 
-        loss_hei + loss_up + 
-        loss_lreg + loss_sreg
-        )
-    print(loss_hei , loss_up ,
-        loss_lreg , loss_sreg)
+        loss_pos + loss_vel + loss_rot + loss_ang + 
+        loss_hei + loss_up + loss_lreg + loss_sreg )
     loss_sum.backward()
     optim_policy.step()
-    return "train_policy", float(loss_sum.detach().numpy())
-######################################################################
+    return "train_policy", float(loss_sum.cpu().detach().numpy())
 
 if "__main__" == __name__ :
     from pyquaternion import Quaternion
