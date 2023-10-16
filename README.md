@@ -3,7 +3,7 @@ PAPPER -> [SuperTrack: Motion Tracking for Physically Simulated Characters using
 Supervised Learning](https://theorangeduck.com/media/uploads/other_stuff/SuperTrack.pdf)
 
 ## requirement
-pytorch, ovencv-python, dm_control
+pytorch, mujoco
 
 ## Example Out
 #### Inverted pole
