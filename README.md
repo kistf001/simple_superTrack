@@ -12,4 +12,3 @@ Supervised Learning](https://theorangeduck.com/media/uploads/other_stuff/SuperTr
 ![Alt text](/resource/2.gif)
 
 
-Strong against external forces
