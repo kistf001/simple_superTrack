@@ -12,5 +12,4 @@ pytorch, ovencv-python, dm_control
 #### Humanoid doll
 ![Alt text](/resource/2.gif)
 
-
-Strong against external forces
+외력에도 강한 모습을 보여줍니다.
