@@ -1,3 +1,11 @@
+"""
+utils/env.py
+
+mujoco를 추상화하여 사용하기 위한 모듈입니다.
+init함수를 이용하여 초기화하고, step함수를 이용하여 다음 상태로 넘어갑니다.
+reset은 전체 시뮬레이션 상태를 초기화하며, is_fall은 넘어졌는지 확인합니다.
+"""
+
 import time
 import mujoco
 import mujoco.viewer

@@ -1,3 +1,10 @@
+"""
+algorithm.py
+
+supertrack의 메인 알고리즘을 구현합니다.
+주요 함수는 train_policy, train_world 입니다.
+"""
+
 import utils.myQuaternion as myQuaternion
 import torch
 import time

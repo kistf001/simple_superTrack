@@ -1,3 +1,9 @@
+"""
+utils/myQuaternion.py
+
+pytorchd의 Quaternion 연산을 위한 모듈입니다.
+"""
+
 import torch
 import numpy as np
 

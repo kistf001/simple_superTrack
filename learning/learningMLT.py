@@ -1,3 +1,9 @@
+"""
+learning/learningSGL.py
+
+멀티 프로세스 연산을 위한 학습 모듈입니다.
+"""
+
 from algorithm import gather, train_policy, train_world
 import time
 import torch

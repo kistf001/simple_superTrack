@@ -1,3 +1,9 @@
+"""
+utils/network.py
+
+pytorch의 신경망 모델을 정의하는 모듈입니다.
+"""
+
 import torch
 import torch.nn as nn
 

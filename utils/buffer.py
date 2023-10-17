@@ -1,3 +1,11 @@
+"""
+utils/buffer.py
+
+supertrack의 순환 버퍼를 구현합니다.
+init함수를 이용하여 버퍼의 크기를 설정하고, insert, next함수를 
+이용하여 데이터를 삽입하고 다음 인덱스로 넘어갑니다.
+"""
+
 import torch
 
 action_gain = torch.tensor([10]).share_memory_()
