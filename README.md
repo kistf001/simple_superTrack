@@ -2,10 +2,18 @@
 PAPPER -> [SuperTrack: Motion Tracking for Physically Simulated Characters using
 Supervised Learning](https://theorangeduck.com/media/uploads/other_stuff/SuperTrack.pdf)
 
-## requirement
-pytorch, mujoco
+## Environment  
+tested on 
+* pytorch = 2.0 
+* mujoco = 2.0
+* windows10
 
-## Example Out
+## How to run
+```
+python main.py
+```
+
+## Example result
 #### Inverted pole
 ![Alt text](/resource/1.gif)
 
