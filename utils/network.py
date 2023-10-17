@@ -19,7 +19,8 @@ class PolicyWorld(nn.Module):
         self.critic = nn.Sequential(
             nn.Linear(local_dim + control_dim, 1024), nn.ELU(), nn.Linear(1024, 1024), nn.ELU(), nn.Linear(1024, state_dim)
         )
-
+    
+    # 외부에서 학습되기 때문에 생략함
     def forward(self):
         raise NotImplementedError
 
