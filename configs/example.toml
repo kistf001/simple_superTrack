@@ -1,0 +1,23 @@
+# Example configuration file
+# Only specify values you want to override - defaults will be used for the rest
+#
+# Usage:
+#   python main_multiple.py --config configs/example.toml
+#
+# Weight files are automatically saved to: log/exp_YYYYMMDD_HHMMSS_signature/
+
+# Process configurations
+[process_2]
+device = "cuda:0"
+
+[process_3]
+device = "cuda:1"
+
+# Optimizer settings
+[optimizer]
+world_learning_rate = 1e-4
+policy_learning_rate = 1e-5
+
+# Experiment metadata
+[misc]
+experiment_signature = "example_experiment"

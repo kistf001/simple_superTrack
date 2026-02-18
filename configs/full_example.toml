@@ -1,0 +1,151 @@
+# Full configuration example showing all available options
+# Copy this file and modify as needed for your experiments
+#
+# Usage:
+#   python main_multiple.py --config configs/full_example.toml
+
+# =============================================================================
+# Queue Configuration
+# =============================================================================
+[queue]
+collector_to_trainer_queue_size = 128
+network_weight_queue_size = 3
+monitor_queue_size = 1
+
+# =============================================================================
+# Process Configurations
+# =============================================================================
+[process_1]
+device = "cpu"
+model_path = "model/humanoid.xml"
+
+[process_2]
+device = "cuda:0"
+buffer_size = 262144  # 8192 * 8 * 4
+model_path = "model/humanoid.xml"
+network_sync_period = 10
+
+[process_3]
+device = "cuda:1"
+buffer_size = 262144  # 8192 * 8 * 4
+model_path = "model/humanoid.xml"
+network_sync_period = 5
+
+# =============================================================================
+# Training Configuration
+# =============================================================================
+[training]
+run_process_2 = true
+run_process_3 = true
+barrier_timeout = 60.0
+model_save_interval = 100
+
+# =============================================================================
+# Monitoring Configuration
+# =============================================================================
+[monitor]
+log_interval = 10
+display_refresh = 0.1
+
+# =============================================================================
+# Multiprocessing Tool Configuration
+# =============================================================================
+[mp_tool]
+queue_poll_interval = 0.0025
+buffer_refresh_max_chunks = 32
+
+# =============================================================================
+# Data Collection Configuration
+# =============================================================================
+[data_collection]
+motions_dir = "mjmotions/"
+truss_distance_threshold = 0.30
+total_samples = 1024
+use_standing_pose = true
+num_collectors = 1
+
+# =============================================================================
+# Replay Buffer Configuration
+# =============================================================================
+[buffer]
+world_chunk_size = 8
+policy_chunk_size = 32
+world_sample_percent = 0.05
+policy_sample_percent = 0.05
+recent_data_ratio = 0.05
+recent_sample_ratio = 0.2
+
+# =============================================================================
+# Network Architecture Configuration
+# =============================================================================
+[network_architecture]
+world_hidden_size = 1024
+world_dropout_rate = 0.2
+policy_hidden_size = 512
+policy_dropout_rate = 0.1
+
+# =============================================================================
+# Optimizer Configuration
+# =============================================================================
+[optimizer]
+world_learning_rate = 1e-4
+policy_learning_rate = 1e-5
+use_scheduler = false
+scheduler_T_0 = 31
+scheduler_T_mult = 1
+scheduler_eta_min = 1e-5
+gradient_clip_max_norm = 1.0
+training_epochs = 1
+
+# =============================================================================
+# Loss Weights Configuration
+# =============================================================================
+[loss_weights.world]
+pos = 1.0
+vel = 1.0
+rot = 1.0
+ang = 1.0
+
+[loss_weights.policy]
+pos = 1.0
+vel = 0.2
+rot = 1.0
+ang = 0.2
+height = 1.0
+normal = 1.0
+
+[loss_weights.policy.reg_decay]
+l1_initial = 1.0
+l1_final = 0.01
+l2_initial = 1.0
+l2_final = 0.01
+decay_start = 800
+decay_end = 1500
+
+# =============================================================================
+# Policy Training Configuration
+# =============================================================================
+[policy_training]
+noise_std = 0.1
+output_scale = 2
+target_upward_vector = [-0.001, 0.0, 1.0]
+
+# =============================================================================
+# Simulation Configuration
+# =============================================================================
+[simulation]
+mujoco_substeps = 4
+min_dt = 1e-6
+
+# =============================================================================
+# Shared Memory Configuration
+# =============================================================================
+[shared_memory]
+use_pinned_memory = true
+shared_buffer_capacity_multiplier = 4
+
+# =============================================================================
+# Miscellaneous Configuration
+# =============================================================================
+[misc]
+experiment_signature = "full_example"

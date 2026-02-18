@@ -1,0 +1,172 @@
+<?xml version="1.0" ?>
+<mujoco>
+  <option timestep='0.01' gravity='0 0 0'/>
+  <visual>
+    <global offwidth='1920' offheight='1080'/>
+  </visual>
+  <asset>
+    <texture type='skybox' builtin='gradient' rgb1='0.3 0.5 0.7' rgb2='0 0 0' width='512' height='512'/>
+    <texture name='grid' type='2d' builtin='checker' width='512' height='512' rgb1='0.2 0.2 0.2' rgb2='0.3 0.3 0.3'/>
+    <material name='grid' texture='grid' texrepeat='1 1' texuniform='true' reflectance='0.2'/>
+  </asset>
+  <worldbody>
+    <light pos='0 0 3' dir='0 0 -1' directional='true' diffuse='0.8 0.8 0.8'/>
+    <geom name='floor' type='plane' size='10 10 0.1' material='grid' rgba='0.8 0.8 0.8 1'/>
+
+    <!-- XYZ Axis arrows at origin -->
+    <geom name='axis_x' type='capsule' size='0.01' fromto='0 0 0 1 0 0' rgba='1 0 0 1'/>
+    <geom name='axis_y' type='capsule' size='0.01' fromto='0 0 0 0 1 0' rgba='0 1 0 1'/>
+    <geom name='axis_z' type='capsule' size='0.01' fromto='0 0 0 0 0 1' rgba='0 0 1 1'/>
+    <body name='joint_0' pos='0 0 0'>
+      <freejoint name='free_0'/>
+      <geom name='sphere_0' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_1' pos='0 0 0'>
+      <freejoint name='free_1'/>
+      <geom name='sphere_1' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_2' pos='0 0 0'>
+      <freejoint name='free_2'/>
+      <geom name='sphere_2' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_3' pos='0 0 0'>
+      <freejoint name='free_3'/>
+      <geom name='sphere_3' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_4' pos='0 0 0'>
+      <freejoint name='free_4'/>
+      <geom name='sphere_4' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_5' pos='0 0 0'>
+      <freejoint name='free_5'/>
+      <geom name='sphere_5' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_6' pos='0 0 0'>
+      <freejoint name='free_6'/>
+      <geom name='sphere_6' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_7' pos='0 0 0'>
+      <freejoint name='free_7'/>
+      <geom name='sphere_7' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_8' pos='0 0 0'>
+      <freejoint name='free_8'/>
+      <geom name='sphere_8' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_9' pos='0 0 0'>
+      <freejoint name='free_9'/>
+      <geom name='sphere_9' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_10' pos='0 0 0'>
+      <freejoint name='free_10'/>
+      <geom name='sphere_10' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_11' pos='0 0 0'>
+      <freejoint name='free_11'/>
+      <geom name='sphere_11' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_12' pos='0 0 0'>
+      <freejoint name='free_12'/>
+      <geom name='sphere_12' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_13' pos='0 0 0'>
+      <freejoint name='free_13'/>
+      <geom name='sphere_13' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_14' pos='0 0 0'>
+      <freejoint name='free_14'/>
+      <geom name='sphere_14' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_15' pos='0 0 0'>
+      <freejoint name='free_15'/>
+      <geom name='sphere_15' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_16' pos='0 0 0'>
+      <freejoint name='free_16'/>
+      <geom name='sphere_16' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_17' pos='0 0 0'>
+      <freejoint name='free_17'/>
+      <geom name='sphere_17' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_18' pos='0 0 0'>
+      <freejoint name='free_18'/>
+      <geom name='sphere_18' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_19' pos='0 0 0'>
+      <freejoint name='free_19'/>
+      <geom name='sphere_19' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_20' pos='0 0 0'>
+      <freejoint name='free_20'/>
+      <geom name='sphere_20' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='joint_21' pos='0 0 0'>
+      <freejoint name='free_21'/>
+      <geom name='sphere_21' type='box' size='0.03 0.03 0.03' rgba='1 0 0 1'/>
+    </body>
+    <body name='bone_0_1' pos='0 0 0' mocap='true'>
+      <geom name='bone_0_1_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_1_2' pos='0 0 0' mocap='true'>
+      <geom name='bone_1_2_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_2_3' pos='0 0 0' mocap='true'>
+      <geom name='bone_2_3_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_3_4' pos='0 0 0' mocap='true'>
+      <geom name='bone_3_4_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_0_5' pos='0 0 0' mocap='true'>
+      <geom name='bone_0_5_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_5_6' pos='0 0 0' mocap='true'>
+      <geom name='bone_5_6_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_6_7' pos='0 0 0' mocap='true'>
+      <geom name='bone_6_7_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_7_8' pos='0 0 0' mocap='true'>
+      <geom name='bone_7_8_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_0_9' pos='0 0 0' mocap='true'>
+      <geom name='bone_0_9_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_9_10' pos='0 0 0' mocap='true'>
+      <geom name='bone_9_10_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_10_11' pos='0 0 0' mocap='true'>
+      <geom name='bone_10_11_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_11_12' pos='0 0 0' mocap='true'>
+      <geom name='bone_11_12_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_12_13' pos='0 0 0' mocap='true'>
+      <geom name='bone_12_13_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_11_14' pos='0 0 0' mocap='true'>
+      <geom name='bone_11_14_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_14_15' pos='0 0 0' mocap='true'>
+      <geom name='bone_14_15_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_15_16' pos='0 0 0' mocap='true'>
+      <geom name='bone_15_16_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_16_17' pos='0 0 0' mocap='true'>
+      <geom name='bone_16_17_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_11_18' pos='0 0 0' mocap='true'>
+      <geom name='bone_11_18_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_18_19' pos='0 0 0' mocap='true'>
+      <geom name='bone_18_19_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_19_20' pos='0 0 0' mocap='true'>
+      <geom name='bone_19_20_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+    <body name='bone_20_21' pos='0 0 0' mocap='true'>
+      <geom name='bone_20_21_geom' type='capsule' size='0.015' fromto='0 0 0 0 0 0.1' rgba='0 0 1 0.5'/>
+    </body>
+  </worldbody>
+</mujoco>
