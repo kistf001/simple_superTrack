@@ -282,4 +282,3 @@ MIT License
 * [SuperTrack: Motion Tracking for Physically Simulated Characters using Supervised Learning](https://arxiv.org/abs/2105.08936)
 * [MuJoCo Documentation](https://mujoco.readthedocs.io/)
 * [LAFAN1 Dataset (Ubisoft La Forge)](https://github.com/ubisoft/ubisoft-laforge-animation-dataset)
-
