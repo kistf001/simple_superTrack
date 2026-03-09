@@ -1,284 +1,249 @@
 # SuperTrack: Motion Tracking for Physically Simulated Characters using Supervised Learning
 
-A PyTorch implementation of physics-based motion tracking for humanoid characters in MuJoCo using a **differentiable world model** (learned dynamics) and a **policy network**.  
-The goal is to train a control policy that tracks motion capture targets while remaining physically plausible.
+<p align="center">
+  <img src="./assets/demo.gif" alt="SuperTrack policy tracking demo" width="760">
+</p>
 
-> Note on “differentiable physics”  
-> This project does **not** differentiate through MuJoCo itself. Instead, it learns a **differentiable approximation of the simulator dynamics** (world model) and backpropagates through that model during policy training.
-
-## Demo
-
-![Policy Tracking Demo](assets/demo.gif)
-
-*Humanoid tracking a motion target. Red dots show target/ground-truth positions.*
+Training-oriented **PyTorch + MuJoCo** implementation of the paper **"SuperTrack: Motion Tracking for Physically Simulated Characters using Supervised Learning"**.
 
 ---
 
-## Dataset (LAFAN1: single clip)
+## What this repository provides
 
-This repo is set up to validate the pipeline using **one motion clip sampled from LAFAN1**:
-- A single BVH file is converted into MuJoCo joint targets (`mjmotions/*.pkl`)
-- The included example weights / demo are trained on **that one clip** (single-sequence training)
-
-Place your chosen BVH under `data/motions/` (e.g., one LAFAN1 clip), run the converter, and train.
-
-> If you want multi-clip or full-dataset training, you can extend the motion list and buffer collection logic, but the default workflow assumes “one-clip” for simplicity.
-
----
-
-## Overview
-
-This implementation follows the SuperTrack approach with two neural networks:
-
-1. **World Dynamics Network (Learned World Model)**
-   - A differentiable approximation of physics dynamics
-   - Predicts **linear/angular accelerations** from state + action
-   - Enables gradient-based optimization through a learned simulator surrogate
-
-2. **Policy Control Network**
-   - Generates **residual joint target corrections** (Δqpos-style) for tracking
-   - Takes current state and target pose as input
-   - Outputs corrections that are applied as **position-actuator targets** (e.g., PD target residuals)
+- **SuperTrack-style training pipeline**
+- **PyTorch implementation**
+- **MuJoCo humanoid simulation**
+- **BVH to target-motion conversion**
+- **Learned world dynamics model**
+- **Policy training through differentiable rollouts**
+- **Policy viewer with GIF recording**
+- Code organized for reading and modification
 
 ---
 
-## Training Pipeline (High-level)
+## Dataset setup
 
+This repository is currently structured around a **single BVH clip workflow**.
+
+Recommended usage:
+
+1. place one BVH file under `data/motions/`
+2. convert it into MuJoCo-friendly motion targets
+3. train the world model and policy using the generated motion data
+
+Generated motion targets are written to:
+
+```text
+mjmotions/
 ```
 
-┌─────────────────────────────────────────────────────────────────┐
-│                        Training Pipeline                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐       │
-│  │ Data         │ -> │ World Model  │ -> │ Policy       │       │
-│  │ Collection   │    │ Training     │    │ Training     │       │
-│  └──────────────┘    └──────────────┘    └──────────────┘       │
-│         │                   │                   │                │
-│         v                   v                   v                │
-│  ┌──────────────────────────────────────────────────────┐       │
-│  │                   Replay Buffer                       │       │
-│  │      (circular buffer with chunk-based sampling)      │       │
-│  └──────────────────────────────────────────────────────┘       │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-
-```
-
-- **Collection**: rollouts in MuJoCo to populate a replay buffer
-- **World model**: trained to predict short-horizon dynamics (chunked)
-- **Policy**: trained via differentiable rollouts through the learned world model
-
----
-
-## Project Structure
-
-```
-
-├── main.py                 # Training entry point
-├── config.py               # Configuration (dataclasses + TOML)
-├── env.py                  # MuJoCo environment wrapper
-├── network.py              # Neural networks (World/Policy)
-├── buffer.py               # Replay buffer
-├── transforms.py           # Coordinate transforms
-├── logic_for_collect.py    # Data collection
-├── logic_for_world.py      # World model training
-├── logic_for_policy.py     # Policy training
-├── bvh.py                  # BVH parser
-├── motion_export.py        # BVH → MuJoCo converter
-├── policy_viewer.py        # Visualization + GIF recording
-├── configs/                # TOML configs
-├── model/                  # MuJoCo XML model
-├── data/weight/            # Model weights
-├── mjmotions/              # Converted motions (pkl)
-├── assets/                 # Demo GIF
-└── utils/
-├── quaternion/         # Quaternion ops
-└── iksolver.py         # IK solver
-
-````
+If you want multi-clip or full-dataset training later, you can extend the motion loading and replay-buffer logic, but the default flow is intentionally kept simple.
 
 ---
 
 ## Requirements
 
-- Python 3.10+
-- PyTorch 2.0+
-- MuJoCo 3.0+ (Python bindings via `pip install mujoco`)
-- NumPy, SciPy
-- imageio (for GIF recording)
+Recommended environment:
+
+- **Python 3.11+**
+- **PyTorch 2.0+**
+- **MuJoCo 3.0+**
+- **NumPy**
+- **SciPy**
+- **imageio** (for GIF recording)
+
+> Python 3.11+ is recommended because the current configuration code uses `tomllib`.
 
 ---
 
 ## Installation
 
 ```bash
+git clone https://github.com/kistf001/supertrack-pytorch-mujoco.git
+cd supertrack-pytorch-mujoco
+
 python -m venv .venv
 source .venv/bin/activate
-
 pip install torch numpy scipy mujoco imageio
-````
+```
 
-> If you use CUDA, install the CUDA-enabled PyTorch build according to the official PyTorch instructions.
+For CUDA, install the appropriate PyTorch build for your environment.
 
 ---
 
-## Usage
+## Quick start
 
-### 1) Motion Data Preparation (LAFAN1 single clip)
+### 1) Prepare motion data
 
-Put **one** BVH file into `data/motions/`:
+Put one BVH file into:
+
+```text
+data/motions/
+```
+
+Then run:
 
 ```bash
 python motion_export.py
-# Outputs pkl files to mjmotions/
 ```
 
-### 2) Training
+This converts the motion into MuJoCo-friendly target data and writes the output into:
+
+```text
+mjmotions/
+```
+
+---
+
+### 2) Train
+
+Run the default training configuration:
 
 ```bash
-# Run with default configuration
 python main.py
-
-# Run with custom TOML config
-python main.py --config configs/exp.toml
 ```
 
-The training loop typically alternates between:
-
-* collecting trajectories into the replay buffer
-* fitting the world model on short chunks
-* training the policy on longer chunks via differentiable rollouts
-
-(Exact iteration counts / chunk sizes are defined in `configs/*.toml`.)
-
-### 3) Visualization
+To use a TOML config override:
 
 ```bash
-# View policy tracking
-python policy_viewer.py
-
-# Record demo GIF (4s delay, 5s duration)
-python policy_viewer.py --record
-
-# Custom recording
-python policy_viewer.py -r --delay 2 --duration 10 -o assets/custom.gif
+python main.py --config path/to/your_config.toml
 ```
+
+The training loop follows this high-level cycle:
+
+1. collect trajectories in MuJoCo
+2. fill / update the replay buffer
+3. train the world model on short chunks
+4. train the policy using differentiable rollouts through the learned world model
+5. periodically save checkpoints
+
+---
+
+### 3) Visualize policy behavior
+
+Launch the viewer:
+
+```bash
+python policy_viewer.py
+```
+
+Record a demo GIF:
+
+```bash
+python policy_viewer.py --record
+```
+
+Custom recording:
+
+```bash
+python policy_viewer.py --record --delay 2 --duration 10 --output assets/custom.gif
+```
+
+---
+
+## Important checkpoint note
+
+There is currently a small path mismatch between training and visualization:
+
+- `main.py` saves checkpoints such as:
+  - `policy_final.pth`
+  - `world_final.pth`
+- `policy_viewer.py` currently looks for:
+  - `data/weight/policy.pth`
+
+So after training, you may need to move or copy the trained policy checkpoint manually, for example:
+
+```bash
+mkdir -p data/weight
+cp policy_final.pth data/weight/policy.pth
+```
+
+On Windows PowerShell:
+
+```powershell
+New-Item -ItemType Directory -Force data/weight
+Copy-Item policy_final.pth data/weight/policy.pth
+```
+
+Alternatively, you can edit `ViewerConfig.policy_path` inside `policy_viewer.py`.
+
+---
+
+## Training pipeline
+
+```text
+Data Collection -> Replay Buffer -> World Model Training -> Policy Training
+```
+
+More concretely:
+
+- **Data collection**
+  - roll out trajectories in MuJoCo
+  - gather observations, controls, and target motion information
+  - push samples into the replay buffer
+
+- **World model training**
+  - train a learned dynamics model on short motion chunks
+  - predict future motion evolution from state + action
+
+- **Policy training**
+  - use the learned world model as a differentiable surrogate
+  - optimize the policy to reduce tracking error over longer horizons
 
 ---
 
 ## Configuration
 
-Configuration uses dataclasses with optional TOML overrides:
+Configuration is defined through dataclasses in `config.py`, with optional TOML overrides.
 
-```toml
-# configs/example.toml
-[process]
-device = "cuda:0"
-buffer_size = 262144
+Main categories include:
 
-[optimizer]
-world_learning_rate = 1e-4
-policy_learning_rate = 1e-5
+- `process`
+- `training`
+- `data_collection`
+- `buffer`
+- `network_architecture`
+- `optimizer`
+- `loss_weights`
+- `policy_training`
+- `simulation`
 
-[loss_weights.policy]
-pos = 1.0
-vel = 0.2
-rot = 1.0
+Typical configurable items include:
+
+- device
+- buffer size
+- world / policy chunk sizes
+- learning rates
+- gradient clipping
+- hidden sizes
+- loss weights
+- exploration noise
+- output scaling
+- model path
+
+For the most reliable first run, start with:
+
+```bash
+python main.py
 ```
 
-Key sections:
-
-* `process`: device, buffer size, model paths
-* `optimizer`: learning rates, grad clipping
-* `buffer`: chunk sizes for world/policy training
-* `loss_weights`: loss term weights
-* `policy_training`: noise std, output scaling, etc.
+and only then introduce custom TOML overrides.
 
 ---
 
-## Algorithm Details (Implementation-oriented)
+## References
 
-Notation:
-
-* `S_t`: reference (kinematic) target state at time t (from mocap / converted motion)
-* `P_t`: predicted simulated state at time t (via learned world model rollout)
-* `a_t`: control action / residual target generated by policy
-* `W(·)`: learned world model predicting accelerations
-* `Π(·)`: policy network producing residual joint target corrections
-
-### World Model Training (short-horizon)
-
-1. Sample **short chunks** from replay buffer (e.g., 8 frames)
-2. Initialize `P_0 ← S_0`
-3. For t = 1..T:
-
-   * Predict accelerations with world model:
-     `W(Local(P_{t-1}), a_{t-1}) → (lin_acc, ang_acc)`
-   * Integrate forward one step:
-     `P_t ← Integrate(P_{t-1}, lin_acc, ang_acc, dt)`
-4. Compute loss in **world space** between predicted and recorded states.
-
-> The integration method follows the repo’s implementation (dt from the env). Keep this consistent between data collection and model training.
-
-### Policy Training (longer-horizon, through learned dynamics)
-
-1. Sample **longer chunks** from replay buffer (e.g., 32 frames)
-2. Initialize `P_0 ← S_0`
-3. For t = 1..T:
-
-   * Policy inference:
-     `Δq_t ← Π([Local(P_{t-1}), Local(S_t)])`
-   * Optional exploration noise: `Δq_t ← Δq_t + ε`
-   * Convert residual target into control input for world model / actuators
-     (e.g., position-target residuals for PD-style actuators)
-   * World prediction + integration:
-     `P_t ← Rollout(W, P_{t-1}, Δq_t, dt)`
-4. Compute tracking loss in **local space** to encourage invariance:
-
-   * position/velocity/rotation tracking terms (see `loss_weights`)
+- Paper: https://dl.acm.org/doi/10.1145/3478513.3480527
+- Orange Duck article / paper page: https://theorangeduck.com/page/supertrack-motion-tracking-physically-simulated-characters-using-supervised-learning
 
 ---
 
-## Coordinate Transforms (Local Space)
+## Citation
 
-All observations are converted to **root-relative local space**:
-
-* Positions: relative to root position and rotated into root frame
-* Velocities: rotated into root frame
-* Rotations: expressed relative to root orientation
-* Angular velocities: rotated into root frame
-
-This improves translation/rotation invariance and stabilizes learning.
-
----
-
-## Network Architecture (as implemented)
-
-### WorldDynamicsNetwork
-
-* Encoders for observation + action
-* Multi-layer MLP (hidden size defined in config)
-* Outputs linear & angular accelerations (per body / per feature block)
-
-### PolicyControlNetwork
-
-* Observation/target encoders
-* MLP policy head
-* Tanh-scaled residual outputs (Δq targets), scaled by config
-
-(See `network.py` for exact layer sizes and activations.)
+If this repository helps your work, please cite the original paper.
 
 ---
 
 ## License
 
 MIT License
-
----
-
-## References
-
-* [SuperTrack: Motion Tracking for Physically Simulated Characters using Supervised Learning](https://arxiv.org/abs/2105.08936)
-* [MuJoCo Documentation](https://mujoco.readthedocs.io/)
-* [LAFAN1 Dataset (Ubisoft La Forge)](https://github.com/ubisoft/ubisoft-laforge-animation-dataset)
